@@ -63,10 +63,6 @@ net = cn.SoftmaxNet(layer_args=layer_args,
                     input_shape=train_x.shape[1:], 
                     rand_state=np.random.RandomState(0))
 
-with open('kmeans_filters.pkl', 'rb') as f:
-    filters = pickle.load(f)
-net.layers_[0].filters_ = filters/5.0
-
 net.fit(train_x, 
         train_y, 
         val_x=val_x[::30,:],
