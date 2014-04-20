@@ -638,6 +638,9 @@ class NNet(object):
         return int(np.ceil(num_examples/float(batch_size)))
 
     def split_per_layer(self, vec):
+        """ Given a vector with entries for each learnable parameter in the net, this method sums
+        up the entries for each layer and returns a vector of such sums.  E.g., can be used to
+        calculate absolute mean of weights in each layer."""
         split = []
         ind = 0
         for layer in self.layers_:
@@ -717,11 +720,14 @@ class NNet(object):
                         learn_rate*weight_decay*params)
                 self.set_params(params + velocity)
 
+                # check validation error every once in a while
                 if (batch%val_freq == 0 and batch>0) or batch == num_batch-1:
                     if val_x is None:
                         val_x, val_y = batch_x, batch_y
                     val_acts = self.forward_final(val_x, batch_size=batch_size)
                     cost = self.cost(val_x, val_y, final_acts=val_acts)
+                    # child classes don't necessarily have a concept of "accuracy" and might not
+                    # implement the accuracy method
                     try:
                         acc = self.accuracy(val_acts, val_y)
                     except NotImplemented:
@@ -729,9 +735,9 @@ class NNet(object):
 
                     cost_diff = cost - min_cost
 
+                    # if there has been significant regression in cost, chill out
                     if ((cost_diff > 0 and cost_diff/min_cost > 1) or 
                         no_improvement_iters>chill_out_iters):
-                        # if this was a significant regression in cost, chill out
                         self.set_params(best_params)
                         no_improvement_iters = 0
                         init_learn_rate /= 2
@@ -831,6 +837,17 @@ class SoftmaxNet(NNet):
         super(SoftmaxNet, self).fit(x, binary_y, **kwargs)
 
     def binarize_labels(self, y):
+        """
+        Turns discrete labels into binary vector labels.
+
+        Parameters
+        ----------
+        y : numpy array of N integers from 0 to C-1
+        
+        Returns
+        -------
+        b : numpy array of shape Nx(C-1) s.t. b[i,j]=1 if y[i]==j, and b[i,k] for all k!=j
+        """
         binary_y = np.zeros((len(y), self.num_classes))
         for c in xrange(self.num_classes):
             binary_y[y==c,c] = 1
