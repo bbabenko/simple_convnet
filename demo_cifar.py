@@ -17,9 +17,10 @@ def load_batch(fname):
     y = np.array(data['labels'])
     return x, y
 
-train_x = np.zeros((30000,32,32,3), dtype='float32')
-train_y = np.zeros(30000, dtype='float32')
-for b in xrange(3):
+num_train_batch = 3 # can go up to 4 if memory allows
+train_x = np.zeros((num_train_batch*10000,32,32,3), dtype='float32')
+train_y = np.zeros(num_train_batch*10000, dtype='float32')
+for b in xrange(num_train_batch):
     train_x[b*10000:(b+1)*10000,...], train_y[b*10000:(b+1)*10000] = \
         load_batch('data_batch_%d' % (b+1))
 mean_x = train_x[::10,...].mean(0)[np.newaxis,...]
